@@ -1,29 +1,262 @@
 # Collaborative Whiteboard
 
-This is a real-time, web-based collaborative whiteboard that allows multiple users to draw together simultaneously.
+A real-time collaborative whiteboard application that allows multiple users to draw together on a shared canvas. Each user is assigned a unique color, and all drawing actions are synchronized across all connected clients.
 
 ## Features
 
-- Real-time drawing collaboration via WebSocket
-- Each user gets assigned a unique random color
-- Canvas synchronization for new connections
-- Automatic reconnection handling
-- Clean and simple UI
-- Touch device support
+- Real-time drawing synchronization across multiple devices
+- Automatic color assignment for each user
+- Persistent drawing history for new connections
+- Touch screen support for mobile devices
+- Adjustable brush size
+- Clear canvas functionality (synchronized for all users)
+- Connection status indicator
+- Automatic reconnection attempts on connection loss
 
-## Technical Stack
+## Tech Stack
 
-- Backend: Node.js with WebSocket (ws)
-- Frontend: HTML5, CSS, Vanilla JavaScript
-- No external frontend dependencies
+- **Frontend**: Vanilla JavaScript, HTML5 Canvas, WebSockets
+- **Backend**: Node.js with `ws` WebSocket library
 
-## How to Run
+## Installation
 
 ### Prerequisites
 
 - Node.js (v12 or higher)
-- npm
+- npm (comes with Node.js)
 
-### Server Setup
+### Setup
 
-1. Navigate to the server directory:
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd collaborative-whiteboard
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Start the server:
+   ```
+   npm start
+   ```
+
+4. Open the application in your browser:
+   - Open `main.html` directly in your browser, or
+   - Set up a simple HTTP server (like `live-server` or `http-server`) to serve the static files
+
+## Usage
+
+1. Open the application in multiple browser windows or devices (connected to the same network)
+2. Start drawing on the canvas
+3. All connected users will see your drawings in real-time
+4. Use the brush size slider to adjust the line thickness
+5. Use the "Clear Canvas" button to clear the canvas for all users
+
+## Testing
+
+To test the application:
+
+1. Start the server using `npm start`
+2. Open `main.html` in multiple browser windows
+3. Try drawing in one window and observe the changes appearing in the other window(s)
+4. Test the clear canvas functionality to see if it clears for all users
+5. Test network disruption scenarios:
+   - Disable your internet connection while using the application
+   - Observe the status changing to "Disconnected" or "Reconnecting..."
+   - Re-enable your internet connection to see it automatically reconnect
+
+## Technical Details
+
+## Architecture Overview
+
+The application follows a client-server architecture:
+
+1. **Server** (Node.js with WebSockets)
+   - Manages client connections
+   - Broadcasts drawing events to all connected clients
+   - Maintains drawing history
+   - Assigns unique colors to each client
+
+2. **Client** (HTML, CSS, JavaScript, Canvas API)
+   - Renders the whiteboard using HTML5 Canvas
+   - Captures user input (mouse/touch events)
+   - Sends drawing data to the server
+   - Renders drawing data received from other clients
+   - Manages connection status and reconnection logic
+
+## Key Components
+
+### Server-side (`server.js`)
+
+The server is built using Node.js with the `ws` WebSocket library. Its main responsibilities include:
+
+1. **Client Management**
+   - Maintains a set of all connected clients
+   - Assigns a unique color to each client upon connection
+   - Tracks client disconnections
+
+2. **Drawing History**
+   - Stores all drawing actions in an array (`drawHistory`)
+   - Limits history to the most recent 1000 actions to prevent memory issues
+   - Sends the entire drawing history to new clients when they connect
+
+3. **Message Broadcasting**
+   - Forwards drawing events from one client to all other clients
+   - Broadcasts canvas clear commands to all clients
+
+4. **Message Handling**
+   - Processes different types of messages:
+     - `draw`: Drawing actions
+     - `clear`: Canvas clear commands
+
+### Client-side (`app.js`, `main.html`)
+
+The client is built using standard web technologies:
+
+1. **Canvas Management**
+   - Renders the whiteboard using HTML5 Canvas
+   - Resizes the canvas to fit the container
+   - Provides drawing functionality
+
+2. **User Input Handling**
+   - Captures mouse events (down, move, up)
+   - Provides touch event support for mobile devices
+   - Converts touch events to equivalent mouse events
+
+3. **WebSocket Communication**
+   - Establishes and maintains WebSocket connection
+   - Sends drawing data to the server
+   - Processes incoming drawing data from other clients
+
+4. **UI Components**
+   - Status indicator showing connection state
+   - Color indicator showing the user's assigned color
+   - Brush size adjustment
+   - Clear canvas button
+
+## Communication Flow
+
+### Connection Establishment
+
+1. When a client connects to the server:
+   - The server adds the client to its set of connected clients
+   - The server generates a random color for the client
+   - The server sends the assigned color to the client
+   - The server sends the entire drawing history to the client
+
+2. The client:
+   - Displays the connection status as "Connected"
+   - Sets its drawing color to the assigned color
+   - Renders any existing drawing history
+
+### Drawing Process
+
+When a user draws on the canvas:
+
+1. **Client-side**:
+   - The user's mouse/touch movement is captured
+   - A line is drawn on the local canvas
+   - The line data (start/end points, color, width) is stored in the local drawing history
+   - The line data is sent to the server via WebSocket
+
+2. **Server-side**:
+   - The server receives the line data
+   - The server adds the line data to its drawing history
+   - The server broadcasts the line data to all other connected clients
+
+3. **Other clients**:
+   - Receive the line data from the server
+   - Draw the line on their canvases
+   - Add the line data to their local drawing histories
+
+### Canvas Clearing
+
+When a user clicks the "Clear Canvas" button:
+
+1. **Client-side**:
+   - The local canvas is cleared
+   - A clear command is sent to the server
+
+2. **Server-side**:
+   - The server clears its drawing history
+   - The server broadcasts the clear command to all connected clients
+
+3. **Other clients**:
+   - Receive the clear command
+   - Clear their canvases and local drawing histories
+
+## Network Disruption Handling
+
+The application implements several strategies to handle network disruptions:
+
+### Server-side Handling
+
+The server is designed to:
+- Detect client disconnections through the WebSocket `close` event
+- Remove disconnected clients from its set of active clients
+- Handle errors gracefully without crashing
+
+### Client-side Handling
+
+The client implements:
+
+1. **Connection Status Tracking**
+   - Updates the UI to show the current connection status:
+     - "Connected" (green)
+     - "Connecting" (orange)
+     - "Disconnected" (red)
+     - "Reconnecting in Xs..." (during reconnection attempts)
+
+2. **Automatic Reconnection**
+   - When the connection is lost, the client automatically attempts to reconnect
+   - Uses an exponential backoff strategy (starting at 1 second, increasing by a factor of 1.5)
+   - Limits reconnection attempts to a maximum of 5
+   - Displays the countdown to the next reconnection attempt
+
+3. **Local Drawing Persistence**
+   - Maintains a local copy of the drawing history
+   - Continues to allow the user to draw even when disconnected
+   - Redraws the canvas when resizing or reconnecting
+
+### What Happens During Network Disruption
+
+1. **When the connection is lost**:
+   - The WebSocket `onclose` event is triggered
+   - The status indicator changes to "Disconnected"
+   - The reconnection timer starts
+   - The user can still draw on their local canvas
+
+2. **During reconnection attempts**:
+   - The status changes to "Reconnecting in Xs..."
+   - After the countdown, a new WebSocket connection is attempted
+   - If successful, the status changes to "Connected"
+   - If unsuccessful, the backoff time increases and another attempt is scheduled
+
+3. **After successful reconnection**:
+   - The server sends the client's assigned color again
+   - The server sends the current drawing history
+   - The client receives and renders this history
+   - Local drawings made while disconnected may be lost as they're not synced to the server
+
+4. **Limitations**:
+   - If a user draws while disconnected, those drawings are only visible on their own canvas and won't be synchronized with other users
+   - After reconnection, the canvas is updated with the server's state, which may override local changes made during the disconnection
+
+## Performance Considerations
+
+1. **Drawing History Limitation**
+   - The server limits the drawing history to 1000 items to prevent memory issues
+   - This means that very old drawing actions may be lost if the whiteboard is heavily used
+
+2. **Canvas Optimization**
+   - The canvas is resized to fit its container, balancing quality and performance
+   - Drawing operations are kept simple (lines only) to ensure smooth performance
+
+3. **WebSocket Message Size**
+   - Messages are kept small, containing only essential information:
+     - Line start/end coordinates
+     - Color
+     - Line width

@@ -70,23 +70,6 @@ To test the application:
 
 ## Technical Details
 
-## Architecture Overview
-
-The application follows a client-server architecture:
-
-1. **Server** (Node.js with WebSockets)
-   - Manages client connections
-   - Broadcasts drawing events to all connected clients
-   - Maintains drawing history
-   - Assigns unique colors to each client
-
-2. **Client** (HTML, CSS, JavaScript, Canvas API)
-   - Renders the whiteboard using HTML5 Canvas
-   - Captures user input (mouse/touch events)
-   - Sends drawing data to the server
-   - Renders drawing data received from other clients
-   - Manages connection status and reconnection logic
-
 ## Key Components
 
 ### Server-side (`server.js`)
@@ -221,30 +204,6 @@ The client implements:
    - Continues to allow the user to draw even when disconnected
    - Redraws the canvas when resizing or reconnecting
 
-### What Happens During Network Disruption
-
-1. **When the connection is lost**:
-   - The WebSocket `onclose` event is triggered
-   - The status indicator changes to "Disconnected"
-   - The reconnection timer starts
-   - The user can still draw on their local canvas
-
-2. **During reconnection attempts**:
-   - The status changes to "Reconnecting in Xs..."
-   - After the countdown, a new WebSocket connection is attempted
-   - If successful, the status changes to "Connected"
-   - If unsuccessful, the backoff time increases and another attempt is scheduled
-
-3. **After successful reconnection**:
-   - The server sends the client's assigned color again
-   - The server sends the current drawing history
-   - The client receives and renders this history
-   - Local drawings made while disconnected may be lost as they're not synced to the server
-
-4. **Limitations**:
-   - If a user draws while disconnected, those drawings are only visible on their own canvas and won't be synchronized with other users
-   - After reconnection, the canvas is updated with the server's state, which may override local changes made during the disconnection
-
 ## Performance Considerations
 
 1. **Drawing History Limitation**
@@ -260,3 +219,42 @@ The client implements:
      - Line start/end coordinates
      - Color
      - Line width
+    
+# Future Improvements 
+Here are possible impovements and suggestions to the project.
+### Short-term Improvements (1-2 weeks)
+
+1. **User Experience Enhancements**
+   - Add undo/redo functionality
+   - Implement different drawing tools (rectangle, circle, line, text)
+   - Add color picker for user color selection
+
+2. **Performance Optimizations**
+   - Batch drawing updates to reduce WebSocket traffic
+   - Add compression for WebSocket messages
+
+3. **Reliability Improvements**
+   - Add server-side logging for troubleshooting
+   - Add better error handling and user feedback
+   - Implement message queue for dropped messages during disconnection
+
+### Medium-term Roadmap (1-3 months)
+
+1. **Persistence and Session Management**
+   - Implement user authentication
+   - Add whiteboard rooms/sessions
+
+2. **Advanced Features**
+   - Add image upload and embedding
+   - Implement collaborative text editing
+   - Add basic shapes and object manipulation
+
+### Long-term Vision (3+ months)
+
+1. **Enterprise Features**
+   - Add user roles and permissions
+   - Create organization management
+
+2. **Advanced Collaboration**
+   - Add voice and video chat integration
+   - Implement cursor presence (see other users' cursors)

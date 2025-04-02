@@ -1,0 +1,10 @@
+{
+  "services": {
+    "server": {
+      "build": {
+        "base": "node",
+        "cmd": "npm install && node server/server.js"
+      }
+    }
+  }
+}

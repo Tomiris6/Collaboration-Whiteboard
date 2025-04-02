@@ -1,10 +1,9 @@
 {
-  "services": {
-    "server": {
-      "build": {
-        "base": "node",
-        "cmd": "npm install && node server/server.js"
-      }
-    }
+  "build": {
+    "base": "./server", 
+    "watchPatterns": ["server/**", "client/**"]
+  },
+  "deploy": {
+    "startCommand": "npm install && npm start"
   }
 }
